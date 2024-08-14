@@ -1,0 +1,143 @@
+<?php
+
+namespace Modules\Order\Admin\OrderResource\Pages;
+
+use Filament\Actions;
+use Filament\Infolists\Components\Card;
+use Filament\Infolists\Components\KeyValueEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Modules\Order\Admin\OrderResource;
+use Modules\Order\Models\OrderHistory;
+
+class ViewOrder extends ViewRecord
+{
+    protected static string $resource = OrderResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make(),
+        ];
+    }
+
+    public function infolist(Infolist $infolist): Infolist
+    {
+        $products = $infolist->record->products;
+        $orderHistories = OrderHistory::query()->where('order_id', $infolist->record->id)->get();
+        $productOptions = [];
+        $productsTable = [];
+        $orderHistoryValuesTable = [];
+        $historyTable = [];
+
+        foreach ($orderHistories as $orderHistory) {
+            $orderHistoryValues = (array) json_decode($orderHistory->values);
+            $orderHistoryValuesTable = [];
+
+            if (count($orderHistoryValues) > 0) {
+                foreach ($orderHistoryValues as $orderHistoryKey => $orderHistoryValue) {
+                    $orderHistoryValuesTableData[__($orderHistoryKey)] = $orderHistoryValue;
+                }
+
+                $orderHistoryValuesTable[] = KeyValueEntry::make('order_history_values')
+                    ->columnSpanFull()
+                    ->hiddenLabel()
+                    ->keyLabel(Carbon::parse($orderHistory->created_at)->format('d.m.Y H:i'))
+                    ->valueLabel(false)
+                    ->getStateUsing(function ($record) use ($orderHistoryValuesTableData) {
+                        return $orderHistoryValuesTableData;
+                    });
+
+                $historyTable = array_merge($historyTable, [Card::make()->schema($orderHistoryValuesTable)]);
+            }
+        }
+
+        foreach ($products as $product) {
+            $orderProducts = [];
+            $orderProducts[] = KeyValueEntry::make('products')
+                ->columnSpanFull()
+                ->hiddenLabel()
+                ->keyLabel(__('Product') . ' ID: ' . $product['id'])
+                ->valueLabel(false)
+                ->getStateUsing(function ($record) use ($product) {
+                    return [
+                        __('Name') => $product['name'],
+                        __('Price') => $product['price'],
+                        __('Quantity') => $product['quantity'],
+                        __('Total') => $product['total'],
+                        __('Link') => $product['link'],
+                    ];
+                });
+            if (count($product['options']) > 0) {
+                foreach ($product['options'] as $option) {
+                    $productOptions = [];
+                    if (gettype($option['selected']) == 'string') {
+                        $option['selected'] = [$option['selected']];
+                    }
+                    if (count($option['selected']) > 0 && count($option['values']) > 0) {
+                        foreach ($option['selected'] as $selected) {
+                            foreach ($option['values'] as $value) {
+                                if ($selected == $value['option_value_id']) {
+                                    $productOptions[] = KeyValueEntry::make('options')
+                                        ->columnSpanFull()
+                                        ->hiddenLabel()
+                                        ->keyLabel($option['name'])
+                                        ->valueLabel(false)
+                                        ->getStateUsing(function ($record) use ($value) {
+                                            return [
+                                                __('Name') => $value['name'],
+                                                __('Sign') => $value['sign'],
+                                                __('Value') => $value['value'],
+                                                __('Parameter') => $value['parameter'],
+                                                __('Summary') => $value['summary'] ?? '',
+                                            ];
+                                        });
+                                }
+                            }
+                        }
+                    }
+                    $orderProducts = array_merge($orderProducts, $productOptions);
+                }
+            }
+            $productsTable = array_merge($productsTable, [Section::make()->schema($orderProducts)]);
+        }
+
+        return $infolist
+            ->schema([
+                Section::make(__('Details'))
+                    ->schema([
+                        KeyValueEntry::make('details')
+                            ->columnSpanFull()
+                            ->hiddenLabel()
+                            ->keyLabel(__('Order info'))
+                            ->valueLabel(false)
+                            ->getStateUsing(function ($record) {
+                                return [
+                                    __('Email field') => $record->details['email'],
+                                    __('Status') => OrderStatus::STATUSES[$record->status] ?? '',
+                                ];
+                            }),
+                    ])->collapsible(),
+                Section::make(__('Payment'))
+                    ->schema([
+                        KeyValueEntry::make('payment_method')
+                            ->columnSpanFull()
+                            ->hiddenLabel()
+                            ->keyLabel(__('Payment info'))
+                            ->valueLabel(false)
+                            ->getStateUsing(function ($record) {
+                                return [
+                                    __('Payment method') => PaymentMethod::query()->where('payment_id', $record->details['payment'])->first()->name ?? ' - ',
+                                ];
+                            }),
+                    ])->collapsible(),
+                Section::make(__('Products'))
+                    ->schema($productsTable)->collapsible(),
+                Section::make(__('History of order'))
+                    ->schema($historyTable)->collapsible(),
+            ]);
+    }
+}

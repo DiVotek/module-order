@@ -1,0 +1,31 @@
+<?php
+
+use App\Services\Status;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Modules\Order\Models\PaymentMethod;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create(PaymentMethod::getDb(), function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('payment_id');
+            $table->string('name');
+            $table->boolean('status')->default(Status::OFF);
+            $table->integer('sorting')->default(0);
+            $table->string('image')->nullable();
+            $table->float('commission')->default(0);
+            $table->json('settings')->nullable();
+            $table->json('fields')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists(PaymentMethod::getDb());
+    }
+};
