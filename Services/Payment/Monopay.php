@@ -2,11 +2,13 @@
 
 namespace Modules\Order\Services\Payment;
 
-use App\Payment\PaymentStatus\StatusDontNeed;
+use Filament\Forms\Components\TextInput;
 use Modules\Order\Models\Order;
+use Modules\Order\Models\PaymentMethod;
 use Modules\Order\Services\Interfaces\PaymentMethodInterface;
 use Modules\Order\Services\Interfaces\PaymentStatusInterface;
 use Modules\Order\Services\PaymentRequestData;
+use Modules\Order\Services\PaymentStatus\StatusDontNeed;
 
 class Monopay implements PaymentMethodInterface
 {
@@ -16,7 +18,9 @@ class Monopay implements PaymentMethodInterface
     public function __construct()
     {
         $this->url = 'https://api.monobank.ua/api/';
-        $this->token = '';
+        $method = PaymentMethod::query()->where('payment_id', $this->getId())->first();
+        $settings = $method->settings ?? [];
+        $this->token = $settings['token'] ?? '';
     }
 
     public function getId(): int
@@ -85,7 +89,9 @@ class Monopay implements PaymentMethodInterface
 
     public static function getSchema(): array
     {
-        return [];
+        return [
+            TextInput::make('settings.token')->label('X-Token'),
+        ];
     }
 
     public function getFields(): array

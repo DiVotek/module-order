@@ -2,6 +2,9 @@
 
 namespace Modules\Order\Admin;
 
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Modules\Order\Admin\OrderResource\Pages;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -64,6 +67,36 @@ class OrderResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])->headerActions([
+                Tables\Actions\Action::make('Settings')
+                    ->slideOver()
+                    ->icon('heroicon-o-cog')
+                    ->modal()
+                    ->fillForm(function (): array {
+                        return [
+                            'min_orice' => setting(config('settings.min_order_price'), ''),
+                            'email_to' => setting(config('settings.email_to'), ''),
+                        ];
+                    })
+                    ->action(function (array $data): void {
+                        setting([
+                            config('settings.min_order_price') => $data['min_orice'] ?? 0,
+                            config('settings.email_to') => $data['email_to'] ?? '',
+                        ]);
+                    })
+                    ->form(function ($form) {
+                        return $form
+                            ->schema([
+                                Section::make('')->schema([
+                                    TextInput::make('min_orice')
+                                        ->label(__('Minimum order price'))
+                                        ->numeric()
+                                        ->suffix(app('currency')->code)
+                                        ->default(setting(config('settings.min_order_price'), 0)),
+                                    TextInput::make('email_to')->email()->label(__('Send email to'))->default(setting(config('settings.email_to'), '')),
+                                ]),
+                            ]);
+                    })
             ]);
     }
 

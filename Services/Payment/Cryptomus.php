@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Payment\PaymentMethods;
+namespace Modules\Order\Services\Payment;
 
-use App\Payment\PaymentStatus\StatusFailed;
-use App\Payment\PaymentStatus\StatusPending;
-use App\Payment\PaymentStatus\StatusSuccess;
-use App\Payment\PaymentStatus\StatusUnexpected;
+use Modules\Order\Services\PaymentStatus\StatusFailed;
+use Modules\Order\Services\PaymentStatus\StatusPending;
+use Modules\Order\Services\PaymentStatus\StatusSuccess;
+use Modules\Order\Services\PaymentStatus\StatusUnexpected;
 use Filament\Forms\Components\TextInput;
 use Modules\Order\Models\Order;
 use Modules\Order\Models\PaymentMethod;
@@ -27,7 +27,7 @@ class Cryptomus implements PaymentMethodInterface
 
     public function __construct()
     {
-        $settings = PaymentMethod::query()->id($this->id)->first()->settings ?? [];
+        $settings = PaymentMethod::query()->where('id',$this->id)->first()->settings ?? [];
         $this->apiUrl = 'https://api.cryptomus.com/v1';
         $this->merchantCode = $settings['merchant_code'] ?? '';
         $this->accessToken = $settings['access_token'] ?? '';

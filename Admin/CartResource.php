@@ -2,6 +2,8 @@
 
 namespace Modules\Order\Admin;
 
+use App\Services\Schema;
+use Filament\Forms\Components\Section;
 use Modules\Order\Admin\CartResource\Pages;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -64,6 +66,29 @@ class CartResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])->headerActions([
+                Tables\Actions\Action::make('Settings')
+                    ->slideOver()
+                    ->icon('heroicon-o-cog')
+                    ->modal()
+                    ->fillForm(function (): array {
+                        return [
+                            'cart_design' => setting(config('settings.cart.design'), 'Base'),
+                        ];
+                    })
+                    ->action(function (array $data): void {
+                        setting([
+                            config('settings.cart.design') => $data['cart_design'] ?? 'Base',
+                        ]);
+                    })
+                    ->form(function ($form) {
+                        return $form
+                            ->schema([
+                                Section::make('')->schema([
+                                    Schema::getModuleTemplateSelect('Layout/Cart'),
+                                ]),
+                            ]);
+                    })
             ]);
     }
 

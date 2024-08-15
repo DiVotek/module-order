@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Payment\PaymentStatus;
+namespace Modules\Order\Services\PaymentStatus;
 
 use Modules\Order\Services\Interfaces\PaymentStatusInterface;
 

@@ -2,8 +2,12 @@
 
 namespace Modules\Order\Admin;
 
+use App\Services\Helper;
+use App\Services\Schema;
+use App\Services\TableSchema;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Modules\Order\Admin\DeliveryMethodResource\Pages;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -35,6 +39,13 @@ class DeliveryMethodResource extends Resource
         return static::getModel()::query()->withoutGlobalScopes()->count();
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->withoutGlobalScopes();
+    }
+
+    protected static ?int $navigationSort = 10;
+
     public static function getModelLabel(): string
     {
         return __('Delivery method');
@@ -47,9 +58,21 @@ class DeliveryMethodResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $schema = [
+            Schema::getName(),
+            Schema::getStatus(),
+            Schema::getSorting(),
+            TextInput::make('price')->translateLabel()->numeric()->suffix(app('currency')->code)->default(0),
+            TextInput::make('free_from')->translateLabel()->numeric()->suffix(app('currency')->code)->default(500),
+            Schema::getImage(),
+        ];
+        $settings = Helper::getDeliveryOptions($form->model->delivery_method_id);
+        if ($settings) {
+            $schema[] = Section::make('Settings')->schema($settings);
+        }
         return $form
             ->schema([
-                //
+                Section::make()->schema($schema)
             ]);
     }
 
@@ -57,8 +80,12 @@ class DeliveryMethodResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TableSchema::getName(),
+                TableSchema::getStatus(),
+                TableSchema::getSorting(),
+                TableSchema::getPrice(),
             ])
+            ->reorderable('sorting')
             ->filters([
                 //
             ])

@@ -2,10 +2,10 @@
 
 namespace Modules\Order\Services\Payment;
 
-use App\Payment\PaymentStatus\StatusFailed;
-use App\Payment\PaymentStatus\StatusPending;
-use App\Payment\PaymentStatus\StatusSuccess;
-use App\Payment\PaymentStatus\StatusUnexpected;
+use Modules\Order\Services\PaymentStatus\StatusFailed;
+use Modules\Order\Services\PaymentStatus\StatusPending;
+use Modules\Order\Services\PaymentStatus\StatusSuccess;
+use Modules\Order\Services\PaymentStatus\StatusUnexpected;
 use Exception;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Support\Facades\Http;
@@ -30,7 +30,8 @@ class PayPal implements PaymentMethodInterface
 
     public function __construct()
     {
-        $settings = PaymentMethod::query()->where('id', $this->id)->first()->settings;
+        $method = PaymentMethod::query()->where('payment_id', $this->id)->first();
+        $settings = $method->settings ?? [];
         $this->clientId = $settings['client_id'] ?? '';
         $this->clientSecret = $settings['client_secret'] ?? '';
         $this->apiUrl = 'https://api-m.paypal.com';
@@ -152,8 +153,8 @@ class PayPal implements PaymentMethodInterface
     public static function getSchema(): array
     {
         return [
-            TextInput::make('client_id')->label('Client ID')->required(),
-            TextInput::make('client_secret')->label('Client Secret')->required(),
+            TextInput::make('settings.client_id')->label('Client ID')->required(),
+            TextInput::make('settings.client_secret')->label('Client Secret')->required(),
         ];
     }
 

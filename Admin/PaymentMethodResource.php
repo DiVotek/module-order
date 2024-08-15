@@ -2,12 +2,17 @@
 
 namespace Modules\Order\Admin;
 
+use App\Services\Helper;
+use App\Services\Schema;
+use App\Services\TableSchema;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Modules\Order\Admin\PaymentMethodResource\Pages;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Order\Models\PaymentMethod;
@@ -35,6 +40,11 @@ class PaymentMethodResource extends Resource
         return static::getModel()::query()->withoutGlobalScopes()->count();
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->withoutGlobalScopes();
+    }
+
     public static function getModelLabel(): string
     {
         return __('Payment method');
@@ -45,11 +55,21 @@ class PaymentMethodResource extends Resource
         return __('Payment methods');
     }
 
+    protected static ?int $navigationSort = 10;
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                //
+                Section::make()->schema([
+                    Schema::getName(),
+                    Schema::getStatus(),
+                    Schema::getSorting(),
+                    Schema::getComission(),
+                    Schema::getImage(),
+                    Section::make('Settings')
+                        ->schema(Helper::getPaymentOptions($form->model->payment_id))
+                ])
             ]);
     }
 
@@ -57,8 +77,12 @@ class PaymentMethodResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TableSchema::getName(),
+                TableSchema::getStatus(),
+                TableSchema::getSorting(),
+                TextColumn::make('commission')->suffix('%'),
             ])
+            ->reorderable('sorting')
             ->filters([
                 //
             ])
@@ -77,7 +101,7 @@ class PaymentMethodResource extends Resource
                     ->modal()
                     ->fillForm(function (): array {
                         return [
-                            'payment_method' => setting(config('settings.payment.default'),''),
+                            'payment_method' => setting(config('settings.payment.default'), ''),
                         ];
                     })
                     ->action(function (array $data): void {

@@ -5,6 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Order\Models\PaymentMethod;
+use Modules\Order\Seeders\PaymentMethodSeeder;
 
 return new class extends Migration
 {
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->json('fields')->nullable();
             $table->timestamps();
         });
+        (new PaymentMethodSeeder())->run();
     }
 
     public function down(): void

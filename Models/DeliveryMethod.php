@@ -27,9 +27,10 @@ class DeliveryMethod extends Model
         'status',
         'sorting',
         'image',
-        'commission',
         'settings',
-        'fields'
+        'fields',
+        'price',
+        'free_from'
     ];
 
     protected $casts = [
@@ -40,5 +41,10 @@ class DeliveryMethod extends Model
     public function order(): HasMany
     {
         return $this->hasMany(Order::class, 'delivery_method_id');
+    }
+
+    public function is_free($total)
+    {
+        return $this->free_from > $total;
     }
 }

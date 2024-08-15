@@ -2,7 +2,7 @@
 
 namespace Modules\Order\Services\Payment;
 
-use App\Payment\PaymentStatus\StatusDontNeed;
+use Modules\Order\Services\PaymentStatus\StatusDontNeed;
 use Modules\Order\Models\Order;
 use Modules\Order\Services\Interfaces\PaymentMethodInterface;
 use Modules\Order\Services\Interfaces\PaymentStatusInterface;

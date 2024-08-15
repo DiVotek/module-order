@@ -15,4 +15,6 @@ return [
       'template' => 'cart_template',
       'design' => 'cart_design',
    ],
+   'min_order_price' => 'min_order_price',
+   'email_to' => 'email_to',
 ];

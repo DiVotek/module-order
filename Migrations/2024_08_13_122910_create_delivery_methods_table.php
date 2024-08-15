@@ -5,6 +5,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Order\Models\DeliveryMethod;
+use Modules\Order\Seeders\DeliveryMethodSeeder;
 
 return new class extends Migration
 {
@@ -17,11 +18,14 @@ return new class extends Migration
             $table->boolean('status')->default(Status::OFF);
             $table->integer('sorting')->default(0);
             $table->string('image')->nullable();
-            $table->float('commission')->default(0);
+            $table->double('price')->default(0);
+            $table->double('free_from')->default(500);
             $table->json('settings')->nullable();
             $table->json('fields')->nullable();
             $table->timestamps();
         });
+
+        (new DeliveryMethodSeeder())->run();
     }
 
     public function down(): void
