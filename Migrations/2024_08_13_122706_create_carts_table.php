@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create(Cart::getDb(), function (Blueprint $table) {
-            $table->uuid();
+            $table->uuid()->primary();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->json('products')->nullable();
             $table->decimal('total', 10, 2)->nullable();

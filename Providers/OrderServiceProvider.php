@@ -18,6 +18,7 @@ class OrderServiceProvider extends ServiceProvider
         );
         Route::middleware('web')->group(module_path('Order', 'routes/web.php'));
         $this->loadMigrations();
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'order');
     }
 
     private function loadMigrations(): void

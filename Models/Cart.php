@@ -13,10 +13,17 @@ class Cart extends Model
     use HasTimestamps;
     use HasUuids;
 
+    protected $primaryKey = 'uuid';
+
+
     public static function getDb(): string
     {
         return 'carts';
     }
 
-    protected $fillable = ['uuid', 'user_id', 'products','total'];
+    protected $fillable = ['uuid', 'user_id', 'products', 'total'];
+
+    protected $casts = [
+        'products' => 'array',
+    ];
 }
