@@ -1,0 +1,21 @@
+{
+   "name": "divotek_smart/order-module",
+   "type": "laravel-module",
+   "description": "Order module for Divotek SMART",
+   "authors": [
+      {
+         "name": "Divotek SMART",
+         "email": "dev@divotek.com"
+      }
+   ],
+   "autoload": {
+      "psr-4": {
+         "Modules\\Filter\\": ""
+      }
+   },
+   "require": {
+      "php": "^8.2"
+   },
+   "version": "1.0.0",
+   "minimum-stability": "dev"
+}
