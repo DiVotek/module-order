@@ -133,7 +133,7 @@ class CheckoutComponent extends Component
         foreach ($fields as $field) {
             $validation = array_merge($validation, $field->validate());
         }
-        $this->validate($validation);
+        $this->validate(array_filter($validation));
         $order = Order::query()->create([
             'user_id' => Auth::id(),
             'delivery_method_id' => $this->deliveryMethod,

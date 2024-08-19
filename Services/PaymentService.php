@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Modules\Order\Models\PaymentMethod;
 use Illuminate\Support\Facades\Redirect;
-use function Modules\Order\Providers\thank_slug;
 use Modules\Order\Services\PaymentStatus\StatusPending;
 
 use Modules\Order\Services\PaymentStatus\StatusUnexpected;
@@ -119,10 +118,7 @@ class PaymentService
 
    private function getRedirectUrl(Order $order): string
    {
-      return tRoute('slug', [
-         'number' => $order->number,
-         'slug' => thank_slug(),
-      ]);
+      return thank_slug($order->uuid);
    }
 
    private function getWebhookUrl(): string

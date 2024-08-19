@@ -9,8 +9,6 @@ use Livewire\Component;
 use Modules\Order\Models\Cart;
 use Modules\Product\Models\Product;
 
-use function Modules\Order\Providers\order_slug;
-
 class CartComponent extends Component
 {
     public Cart $cart;
