@@ -11,7 +11,9 @@ use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Order\Admin\OrderResource;
+use Modules\Order\Models\DeliveryMethod;
 use Modules\Order\Models\OrderHistory;
+use Modules\Order\Models\PaymentMethod;
 
 class ViewOrder extends ViewRecord
 {
@@ -67,41 +69,41 @@ class ViewOrder extends ViewRecord
                         __('Name') => $product['name'],
                         __('Price') => $product['price'],
                         __('Quantity') => $product['quantity'],
-                        __('Total') => $product['total'],
-                        __('Link') => $product['link'],
+                        __('Total') => $product['price'],
+                        __('Link') => $product['slug'],
                     ];
                 });
-            if (count($product['options']) > 0) {
-                foreach ($product['options'] as $option) {
-                    $productOptions = [];
-                    if (gettype($option['selected']) == 'string') {
-                        $option['selected'] = [$option['selected']];
-                    }
-                    if (count($option['selected']) > 0 && count($option['values']) > 0) {
-                        foreach ($option['selected'] as $selected) {
-                            foreach ($option['values'] as $value) {
-                                if ($selected == $value['option_value_id']) {
-                                    $productOptions[] = KeyValueEntry::make('options')
-                                        ->columnSpanFull()
-                                        ->hiddenLabel()
-                                        ->keyLabel($option['name'])
-                                        ->valueLabel(false)
-                                        ->getStateUsing(function ($record) use ($value) {
-                                            return [
-                                                __('Name') => $value['name'],
-                                                __('Sign') => $value['sign'],
-                                                __('Value') => $value['value'],
-                                                __('Parameter') => $value['parameter'],
-                                                __('Summary') => $value['summary'] ?? '',
-                                            ];
-                                        });
-                                }
-                            }
-                        }
-                    }
-                    $orderProducts = array_merge($orderProducts, $productOptions);
-                }
-            }
+            // if (count($product['options']) > 0) {
+            //     foreach ($product['options'] as $option) {
+            //         $productOptions = [];
+            //         if (gettype($option['selected']) == 'string') {
+            //             $option['selected'] = [$option['selected']];
+            //         }
+            //         if (count($option['selected']) > 0 && count($option['values']) > 0) {
+            //             foreach ($option['selected'] as $selected) {
+            //                 foreach ($option['values'] as $value) {
+            //                     if ($selected == $value['option_value_id']) {
+            //                         $productOptions[] = KeyValueEntry::make('options')
+            //                             ->columnSpanFull()
+            //                             ->hiddenLabel()
+            //                             ->keyLabel($option['name'])
+            //                             ->valueLabel(false)
+            //                             ->getStateUsing(function ($record) use ($value) {
+            //                                 return [
+            //                                     __('Name') => $value['name'],
+            //                                     __('Sign') => $value['sign'],
+            //                                     __('Value') => $value['value'],
+            //                                     __('Parameter') => $value['parameter'],
+            //                                     __('Summary') => $value['summary'] ?? '',
+            //                                 ];
+            //                             });
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //         $orderProducts = array_merge($orderProducts, $productOptions);
+            //     }
+            // }
             $productsTable = array_merge($productsTable, [Section::make()->schema($orderProducts)]);
         }
 
@@ -109,35 +111,26 @@ class ViewOrder extends ViewRecord
             ->schema([
                 Section::make(__('Details'))
                     ->schema([
-                        KeyValueEntry::make('details')
+                        KeyValueEntry::make('user_data')
                             ->columnSpanFull()
                             ->hiddenLabel()
                             ->keyLabel(__('Order info'))
                             ->valueLabel(false)
                             ->getStateUsing(function ($record) {
-                                return [
-                                    __('Email field') => $record->details['email'],
-                                    __('Status') => OrderStatus::STATUSES[$record->status] ?? '',
-                                ];
-                            }),
-                    ])->collapsible(),
-                Section::make(__('Payment'))
-                    ->schema([
-                        KeyValueEntry::make('payment_method')
-                            ->columnSpanFull()
-                            ->hiddenLabel()
-                            ->keyLabel(__('Payment info'))
-                            ->valueLabel(false)
-                            ->getStateUsing(function ($record) {
-                                return [
-                                    __('Payment method') => PaymentMethod::query()->where('payment_id', $record->details['payment'])->first()->name ?? ' - ',
-                                ];
+                                $payment = PaymentMethod::query()->withoutGlobalScopes()->where('payment_id', $record->payment_method_id)->first();
+                                $delivery = DeliveryMethod::query()->withoutGlobalScopes()->where('delivery_id', $record->delivery_method_id)->first();
+                                return array_merge($record->user_data,[
+                                    __('Delivery method') => $delivery->name ?? ' - ',
+                                    __('Payment method') => $payment->name ?? ' - ',
+                                    __('Payment status') => $record->payment_status,
+                                    __('Total') => $record->total . ' ' . $record->currency,
+                                ]);
                             }),
                     ])->collapsible(),
                 Section::make(__('Products'))
                     ->schema($productsTable)->collapsible(),
-                Section::make(__('History of order'))
-                    ->schema($historyTable)->collapsible(),
+                // Section::make(__('History of order'))
+                //     ->schema($historyTable)->collapsible(),
             ]);
     }
 }

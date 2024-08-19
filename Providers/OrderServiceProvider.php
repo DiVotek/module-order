@@ -3,6 +3,9 @@
 namespace Modules\Order\Providers;
 
 use App;
+use App\Models\StaticPage;
+use App\Models\SystemPage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,7 +21,7 @@ class OrderServiceProvider extends ServiceProvider
         );
         Route::middleware('web')->group(module_path('Order', 'routes/web.php'));
         $this->loadMigrations();
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'order');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'order');
     }
 
     private function loadMigrations(): void

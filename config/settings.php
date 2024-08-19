@@ -10,6 +10,14 @@ return [
    'order' => [
       'template' => 'order_template',
       'design' => 'order_design',
+      'policy' => 'order_policy',
+      'fields' => [
+         'name' => 'order_field_name',
+         'surname' => 'order_field_surname',
+         'email' => 'order_field_email',
+         'phone' => 'order_field_phone',
+         'comment' => 'order_field_comment',
+      ]
    ],
    'cart' => [
       'template' => 'cart_template',

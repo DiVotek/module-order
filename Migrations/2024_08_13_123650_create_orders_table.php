@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\StaticPage;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Modules\Order\Models\DeliveryMethod;
+use Modules\Order\Models\Order;
 use Modules\Order\Models\OrderStatus;
 use Modules\Order\Models\PaymentMethod;
 
@@ -11,7 +13,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
+        Schema::create(Order::getDb(), function (Blueprint $table) {
             $table->uuid();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreignIdFor(OrderStatus::class, 'status');
@@ -26,10 +28,12 @@ return new class extends Migration
             $table->integer('payment_order_id')->nullable();
             $table->timestamps();
         });
+        StaticPage::createSystemPage('Checkout', 'checkout', path: 'order::checkout-component');
+        StaticPage::createSystemPage('Thank you', 'thank-you', path: 'order::thanks-component');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        Schema::dropIfExists(Order::getDb());
     }
 };

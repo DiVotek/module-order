@@ -26,4 +26,9 @@ class OrderStatus extends Model
     public const STATUS_NEW = 1;
     public const STATUS_PROCESSING = 2;
     public const STATUS_COMPLETED = 3;
+
+    public function order()
+    {
+        return $this->hasMany(Order::class, 'status');
+    }
 }

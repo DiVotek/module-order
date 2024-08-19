@@ -9,13 +9,15 @@ use Livewire\Component;
 use Modules\Order\Models\Cart;
 use Modules\Product\Models\Product;
 
+use function Modules\Order\Providers\order_slug;
+
 class CartComponent extends Component
 {
     public Cart $cart;
     public array $products;
     public $open = false;
 
-    protected $listeners = ['openCart' => 'open', 'closeCart' => 'close', 'addToCart', 'removeFromCart'];
+    protected $listeners = ['openCart' => 'open', 'closeCart' => 'close', 'addToCart' => 'addToCart', 'removeFromCart'];
     public function mount()
     {
         $user_id = Auth::id();
@@ -89,6 +91,6 @@ class CartComponent extends Component
     }
     public function checkout()
     {
-        return Redirect::route('slug', ['slug' => 'checkout']);
+        return Redirect::to(order_slug());
     }
 }

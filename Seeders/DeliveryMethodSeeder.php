@@ -16,19 +16,19 @@ class DeliveryMethodSeeder extends Seeder
             'settings' => [],
             'fields' => []
         ]);
-        DeliveryMethod::query()->create([
-            'delivery_method_id' => 2,
-            'name' => 'City Courier',
-            'comission' => 0,
-            'settings' => [],
-            'fields' => []
-        ]);
-        DeliveryMethod::query()->create([
-            'delivery_method_id' => 3,
-            'name' => 'Country Delivery',
-            'comission' => 0,
-            'settings' => [],
-            'fields' => []
-        ]);
+        // DeliveryMethod::query()->create([
+        //     'delivery_method_id' => 2,
+        //     'name' => 'City Courier',
+        //     'comission' => 0,
+        //     'settings' => [],
+        //     'fields' => []
+        // ]);
+        // DeliveryMethod::query()->create([
+        //     'delivery_method_id' => 3,
+        //     'name' => 'Country Delivery',
+        //     'comission' => 0,
+        //     'settings' => [],
+        //     'fields' => []
+        // ]);
     }
 }

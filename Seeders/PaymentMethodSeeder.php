@@ -16,19 +16,19 @@ class PaymentMethodSeeder extends Seeder
             'settings' => [],
             'fields' => []
         ]);
-        PaymentMethod::query()->create([
-            'payment_id' => 7,
-            'name' => 'PayPal',
-            'comission' => 0,
-            'settings' => [],
-            'fields' => []
-        ]);
-        PaymentMethod::query()->create([
-            'payment_id' => 3,
-            'name' => 'MonoPay',
-            'comission' => 0,
-            'settings' => [],
-            'fields' => []
-        ]);
+        // PaymentMethod::query()->create([
+        //     'payment_id' => 7,
+        //     'name' => 'PayPal',
+        //     'comission' => 0,
+        //     'settings' => [],
+        //     'fields' => []
+        // ]);
+        // PaymentMethod::query()->create([
+        //     'payment_id' => 3,
+        //     'name' => 'MonoPay',
+        //     'comission' => 0,
+        //     'settings' => [],
+        //     'fields' => []
+        // ]);
     }
 }

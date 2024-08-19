@@ -16,6 +16,8 @@ class Order extends Model
     use HasUuids;
     use HasTimestamps;
 
+    protected $primaryKey = 'uuid';
+
     public static function getDb(): string
     {
         return 'orders';
@@ -40,7 +42,7 @@ class Order extends Model
         'products' => 'array',
     ];
 
-    public function status(): BelongsTo
+    public function order_status(): BelongsTo
     {
         return $this->belongsTo(OrderStatus::class, 'status');
     }
