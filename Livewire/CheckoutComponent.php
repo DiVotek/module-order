@@ -16,6 +16,7 @@ use Modules\Order\Models\PaymentMethod;
 use Modules\Order\Services\CheckoutField;
 use Modules\Order\Services\PaymentService;
 use Modules\Order\Services\PaymentStatus\StatusDontNeed;
+use Modules\Product\Models\Product;
 
 class CheckoutComponent extends Component
 {
@@ -53,7 +54,19 @@ class CheckoutComponent extends Component
     {
         $total = 0;
         foreach ($this->products as $product) {
-            $total += $product['price'] * $product['quantity'];
+            $productPrice = $product['price'];
+            if(module_enabled('Options') && isset($product['options'])){
+                $productModel = Product::query()->find($product['id']);
+                foreach ($product['options'] as $option) {
+                    $option = $productModel->optionValues()->where('option_value_id', $option)->first()->pivot;
+                    if($option->sign == '+'){
+                        $productPrice += $option->price;
+                    }else{
+                        $productPrice -= $option->price;
+                    }
+                }
+            }
+            $total += $productPrice * $product['quantity'];
         }
         $payment = PaymentMethod::query()->find($this->paymentMethod);
         if ($payment) {

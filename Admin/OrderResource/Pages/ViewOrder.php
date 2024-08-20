@@ -73,6 +73,30 @@ class ViewOrder extends ViewRecord
                         __('Link') => $product['slug'],
                     ];
                 });
+            if (module_enabled('Options')) {
+                $productOptions = [];
+                foreach ($product['options'] as $key => $optionValue) {
+                    $option = \Modules\Options\Models\Option::query()->find($key);
+                    $value = \Modules\Options\Models\OptionValue::query()->find($optionValue);
+                    $productValue = DB::table('product_option')
+                        ->where('option_value_id', $optionValue)
+                        ->where('product_id', $product['id'])
+                        ->first();
+                    $productOptions[] = KeyValueEntry::make('options')
+                        ->columnSpanFull()
+                        ->hiddenLabel()
+                        ->keyLabel($option->name)
+                        ->valueLabel(false)
+                        ->getStateUsing(function ($record) use ($value, $productValue) {
+                            return [
+                                __('Name') => $value->name,
+                                __('Sign') => $productValue->sign,
+                                __('Price') => $productValue->price,
+                            ];
+                        });
+                }
+                $orderProducts = array_merge($orderProducts, $productOptions);
+            }
             // if (count($product['options']) > 0) {
             //     foreach ($product['options'] as $option) {
             //         $productOptions = [];
@@ -119,7 +143,7 @@ class ViewOrder extends ViewRecord
                             ->getStateUsing(function ($record) {
                                 $payment = PaymentMethod::query()->withoutGlobalScopes()->where('payment_id', $record->payment_method_id)->first();
                                 $delivery = DeliveryMethod::query()->withoutGlobalScopes()->where('delivery_id', $record->delivery_method_id)->first();
-                                return array_merge($record->user_data,[
+                                return array_merge($record->user_data, [
                                     __('Delivery method') => $delivery->name ?? ' - ',
                                     __('Payment method') => $payment->name ?? ' - ',
                                     __('Payment status') => $record->payment_status,

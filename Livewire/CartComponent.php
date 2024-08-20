@@ -52,7 +52,7 @@ class CartComponent extends Component
         $this->open = false;
     }
 
-    public function addToCart($id)
+    public function addToCart($id,array $options = [])
     {
         $product = Product::query()->find($id);
         if ($product) {
@@ -62,7 +62,16 @@ class CartComponent extends Component
             } else {
                 $product->quantity = 1;
                 $product->image = $product->images[0] ?? '';
-                $products[$id] = $product->toArray();
+                $product->options = $options;
+                $products[$id] = $product->only([
+                    'id',
+                    'name',
+                    'slug',
+                    'price',
+                    'quantity',
+                    'image',
+                    'options',
+                ]);
             }
         }
         $this->cart->products = $products;
@@ -74,6 +83,17 @@ class CartComponent extends Component
         $total = 0;
         foreach ($this->cart->products as $product) {
             $total += $product['price'] * $product['quantity'];
+            if(module_enabled('Options') && isset($product['options'])){
+                $productModel = Product::query()->find($product['id']);
+                foreach ($product['options'] as $option) {
+                    $option = $productModel->optionValues()->where('option_value_id', $option)->first()->pivot;
+                    if($option->sign == '+'){
+                        $total += $option->price;
+                    }else{
+                        $total -= $option->price;
+                    }
+                }
+            }
         }
         $this->cart->total = $total;
         $this->cart->save();

@@ -70,6 +70,9 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                return $query->orderByDesc('created_at');
+            })
             ->columns([
                 TextColumn::make('user_data.name')->label(__('Name')),
                 TextColumn::make('user_data.phone')->label(__('Phone')),
@@ -81,7 +84,9 @@ class OrderResource extends Resource
                     }),
                 TextColumn::make('total')->label(__('Total'))->money(app('currency')->code),
                 TextColumn::make('order_status.name')->label(__('Status')),
-                TextColumn::make('payment_status')->label(__('Status')),
+                TextColumn::make('paymentMethod.name'),
+                TextColumn::make('payment_status')->label(__('Payment status')),
+                TextColumn::make('deliveryMethod.name'),
                 //
             ])
             ->filters([
