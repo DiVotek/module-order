@@ -38,7 +38,7 @@ class CheckoutComponent extends Component
         if (empty($this->products)) {
             return redirect()->to(home());
         }
-        $this->policy = StaticPage::query()->find(setting(config('settings.order.policy'), 0));
+        $this->policy = StaticPage::query()->find(setting(config('settings.order.policy'), 0)) ?? new StaticPage();
         $this->deliveryMethods = DeliveryMethod::query()->get();
         $this->paymentMethods = PaymentMethod::query()->get();
         $this->deliveryMethod = setting(config('settings.payment.default'), 0);
