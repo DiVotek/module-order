@@ -117,10 +117,10 @@
 								<span class="font-base">{{ _t("Total amount") }}</span>
 								<span class="font-medium">{{$this->total()}} {{app('currency')->name}}</span>
 							</div>
-							<div>
+							<!-- <div>
 								<span class="font-base">{{ _t("Cashback") }}</span>
 								<span class="font-medium">600 грн</span>
-							</div>
+							</div> -->
 						</div>
 						<div class="flex justify-center items-center">
 							<button type="submit" class="btn btn-light text-base font-bold" aria-label="{{ _t('Make an order') }}">{{ _t('Make an order') }}</button>
