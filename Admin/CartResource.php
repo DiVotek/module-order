@@ -23,10 +23,10 @@ class CartResource extends Resource
         return false;
     }
 
-    public static function canAccess(): bool
-    {
-        return false;
-    }
+    // public static function canAccess(): bool
+    // {
+    //     return false;
+    // }
 
     public static function canEdit(Model $record): bool
     {
@@ -85,19 +85,19 @@ class CartResource extends Resource
                     ->modal()
                     ->fillForm(function (): array {
                         return [
-                            'cart_design' => setting(config('settings.cart.design'), 'Base'),
+                            'design' => setting(config('settings.cart.design'), 'Base'),
                         ];
                     })
                     ->action(function (array $data): void {
                         setting([
-                            config('settings.cart.design') => $data['cart_design'] ?? 'Base',
+                            config('settings.cart.design') => $data['design'] ?? 'Base',
                         ]);
                     })
                     ->form(function ($form) {
                         return $form
                             ->schema([
                                 Section::make('')->schema([
-                                    Schema::getModuleTemplateSelect('Layout/Cart'),
+                                    Schema::getModuleTemplateSelect('cart'),
                                 ]),
                             ]);
                     })

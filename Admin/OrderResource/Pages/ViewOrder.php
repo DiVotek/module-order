@@ -141,8 +141,8 @@ class ViewOrder extends ViewRecord
                             ->keyLabel(__('Order info'))
                             ->valueLabel(false)
                             ->getStateUsing(function ($record) {
-                                $payment = PaymentMethod::query()->withoutGlobalScopes()->where('payment_id', $record->payment_method_id)->first();
-                                $delivery = DeliveryMethod::query()->withoutGlobalScopes()->where('delivery_id', $record->delivery_method_id)->first();
+                                $payment = PaymentMethod::query()->withoutGlobalScopes()->where('payment_id', $record->payment_method_id ?? 0)->first();
+                                $delivery = DeliveryMethod::query()->withoutGlobalScopes()->where('delivery_method_id', $record->delivery_method_id ?? 0)->first();
                                 return array_merge($record->user_data, [
                                     __('Delivery method') => $delivery->name ?? ' - ',
                                     __('Payment method') => $payment->name ?? ' - ',

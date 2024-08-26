@@ -4,6 +4,7 @@ namespace Modules\Order\Livewire;
 
 use App\Actions\GetCart;
 use App\Models\StaticPage;
+use App\Models\SystemPage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Computed;
@@ -46,7 +47,12 @@ class CheckoutComponent extends Component
     }
     public function render()
     {
-        return view('order::livewire.checkout-component');
+        $page = SystemPage::query()->where('page_id', $this->page->id)->first();
+        $design = 'checkout.default';
+        if ($page && $page->design) {
+            $design = $page->setting_key . '.' . $page->design;
+        }
+        return view('template::' . $design);
     }
 
     #[Computed]
@@ -55,13 +61,13 @@ class CheckoutComponent extends Component
         $total = 0;
         foreach ($this->products as $product) {
             $productPrice = $product['price'];
-            if(module_enabled('Options') && isset($product['options'])){
+            if (module_enabled('Options') && isset($product['options'])) {
                 $productModel = Product::query()->find($product['id']);
                 foreach ($product['options'] as $option) {
                     $option = $productModel->optionValues()->where('option_value_id', $option)->first()->pivot;
-                    if($option->sign == '+'){
+                    if ($option->sign == '+') {
                         $productPrice += $option->price;
-                    }else{
+                    } else {
                         $productPrice -= $option->price;
                     }
                 }
@@ -147,7 +153,7 @@ class CheckoutComponent extends Component
             $validation = array_merge($validation, $field->validate());
         }
         $validation = array_filter($validation);
-        if(!empty($validation)){
+        if (!empty($validation)) {
             $this->validate(array_filter($validation));
         }
         $order = Order::query()->create([

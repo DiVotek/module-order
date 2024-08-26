@@ -28,8 +28,8 @@ return new class extends Migration
             $table->integer('payment_order_id')->nullable();
             $table->timestamps();
         });
-        StaticPage::createSystemPage('Checkout', 'checkout', path: 'order::checkout-component');
-        StaticPage::createSystemPage('Thank you', 'thank-you', path: 'order::thanks-component');
+        StaticPage::createSystemPage('Checkout', 'checkout', path: 'order::checkout-component', setting_key: 'checkout');
+        StaticPage::createSystemPage('Thank you', 'thank-you', path: 'order::thanks-component', setting_key: 'order');
     }
 
     public function down(): void

@@ -2,9 +2,11 @@
 
 namespace Modules\Order\Livewire;
 
+use App\Actions\GetCart;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Redirect;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Modules\Order\Models\Cart;
 use Modules\Product\Models\Product;
@@ -12,51 +14,39 @@ use Modules\Product\Models\Product;
 class CartComponent extends Component
 {
     public Cart $cart;
-    public array $products;
     public $open = false;
+    public $event = 'openCart';
 
     protected $listeners = ['openCart' => 'open', 'closeCart' => 'close', 'addToCart' => 'addToCart', 'removeFromCart'];
     public function mount()
     {
-        $user_id = Auth::id();
-        $uuid = Cookie::get('uuid');
-        $cart = null;
-        if ($user_id) {
-            $cart = Cart::query()->where('user_id', $user_id)->first();
-        }
-        if ($uuid) {
-            $cart = Cart::query()->where('uuid', $uuid)->first();
-        }
-        if (!$cart) {
-            $cart = new Cart();
-            $cart->uuid = $uuid;
-            $cart->user_id = $user_id;
-            $cart->products = [];
-            $cart->total = 0;
-            $cart->save();
-        }
-        $this->cart = $cart;
+        $this->cart = GetCart::run();
     }
     public function render()
     {
-        return view('order::livewire.cart-component', [
-            'products' => $this->cart->products,
-        ]);
+        return view(
+            'template::' . setting(config('settings.cart.design'), 'cart.default'),
+            [
+                'products' => $this->cart->products,
+            ]
+        );
     }
     public function open()
     {
+        $this->cart = GetCart::run();
         $this->open = true;
     }
     public function close()
     {
         $this->open = false;
+        $this->dispatch('close' . $this->event);
     }
 
-    public function addToCart($id,array $options = [])
+    public function addToCart($id, array $options = [])
     {
         $product = Product::query()->find($id);
         if ($product) {
-            $products = $this->cart->products;
+            $products = $this->products;
             if (isset($products[$id])) {
                 $products[$id]['quantity'] += 1;
             } else {
@@ -76,20 +66,28 @@ class CartComponent extends Component
         }
         $this->cart->products = $products;
         $this->calculateTotal();
+        $this->dispatch($this->event);
         $this->open();
     }
+    #[Computed]
+    public function products()
+    {
+        return GetCart::run()->products;
+    }
+
+
     public function calculateTotal()
     {
         $total = 0;
         foreach ($this->cart->products as $product) {
             $total += $product['price'] * $product['quantity'];
-            if(module_enabled('Options') && isset($product['options'])){
+            if (module_enabled('Options') && isset($product['options'])) {
                 $productModel = Product::query()->find($product['id']);
                 foreach ($product['options'] as $option) {
                     $option = $productModel->optionValues()->where('option_value_id', $option)->first()->pivot;
-                    if($option->sign == '+'){
+                    if ($option->sign == '+') {
                         $total += $option->price;
-                    }else{
+                    } else {
                         $total -= $option->price;
                     }
                 }
@@ -107,8 +105,23 @@ class CartComponent extends Component
         }
         $this->calculateTotal();
     }
+
+
     public function checkout()
     {
         return Redirect::to(order_slug());
+    }
+
+    public function changeQuantity($id, $quantity)
+    {
+        if ($quantity <= 0) {
+            $quantity = 1;
+        }
+        if (isset($this->cart->products[$id])) {
+            $products = $this->cart->products;
+            $products[$id]['quantity'] = $quantity;
+            $this->cart->products = $products;
+        }
+        $this->calculateTotal();
     }
 }
