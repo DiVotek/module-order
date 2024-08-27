@@ -10,34 +10,35 @@ use Modules\Order\Models\Order;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
-use Modules\Order\Models\PaymentMethod;
 use Illuminate\Support\Facades\Redirect;
+use Modules\Order\Services\Interfaces\PaymentMethodInterface;
 use Modules\Order\Services\PaymentStatus\StatusPending;
 
 use Modules\Order\Services\PaymentStatus\StatusUnexpected;
 use Modules\Order\Services\Interfaces\PaymentStatusInterface;
+use Modules\Order\Services\PaymentStatus\StatusDontNeed;
 
 class PaymentService
 {
    private Order $order;
 
-   private PaymentMethod $paymentMethod;
+   private PaymentMethodInterface $paymentMethod;
 
    public function __construct(Order $order)
    {
       $this->order = $order;
-      // $this->loadPaymentMethods();
-      $this->paymentMethod = PaymentMethod::first() ?? new PaymentMethod;
+      $this->loadPaymentMethods();
    }
 
    public function pay(): RedirectResponse|Redirector
    {
-      return Redirect::to($this->getRedirectUrl($this->order));
-      $url = $this->processPayment();
-      if ($url && $this->paymentMethod->getShouldBeProcessed()) {
-         return Redirect::away($url);
+      if ($this->paymentMethod->shouldProceed()) {
+         $url = $this->processPayment();
+         if ($url) {
+            return Redirect::away($url);
+         }
       } else {
-         $status = new StatusUnexpected;
+         $status = new StatusDontNeed();
          $this->updateOrderPaymentStatus($status);
       }
 
@@ -46,58 +47,47 @@ class PaymentService
 
    private function processPayment(): string
    {
-      $preparedOrder = $this->paymentMethod->prepareOrder($this->order);
-      $additionalParams = $this->paymentMethod->getCreateOrderRequestData();
+      $preparedData = $this->paymentMethod->createOrderData($this->order);
       try {
-         $response = Http::withHeaders([...$additionalParams->getHeaders(), 'Content-Type' => 'application/json'])
-            ->withBody(json_encode([...$preparedOrder, ...$additionalParams->getParams()]), 'application/json')
-            ->post($this->paymentMethod->getUrlForCreateRequest());
+         $response = Http::withHeaders([...$preparedData->getHeaders(), 'Content-Type' => 'application/json'])
+            ->withBody(json_encode($preparedData->getParams()), 'application/json')
+            ->post($this->paymentMethod->createUrl());
          if ($response->successful()) {
-            $orderId = $this->paymentMethod->getOrderIdFromResponse($response->json());
+            $orderId = $this->paymentMethod->getOrderIdFromCreateResponse((array)$response->json());
             $this->updateOrderInvoiceId($orderId);
-
-            return $this->paymentMethod->getRedirectLinkFromResponse($response->json()) ?? '';
+            return $this->paymentMethod->getRedirectLinkFromCreateResponse((array)$response->json());
          } else {
             Log::channel('payment')->error($response->json());
          }
-
-         return '';
       } catch (Exception $e) {
          Log::channel('payment')->error($e->getMessage());
       }
-
       return '';
    }
 
    private function updateOrderInvoiceId(int|string $invoiceId): void
    {
-      $details = $this->order->details;
-      $details['payment_invoice'] = $invoiceId;
-      $this->order->details = $details;
-      $status = new StatusPending;
-      if (! $this->paymentMethod->getShouldBeProcessed()) {
-         $status = new StatusUnexpected;
-      }
+      $this->order->payment_order_id = $invoiceId;
+      $this->order->payment_status =  (new StatusPending)->getName();
       $this->order->save();
-      $this->updateOrderPaymentStatus($status);
    }
 
    public function checkOrderStatus(): void
    {
-      $additionalParams = $this->paymentMethod->getStatusOrderRequestData($this->order);
-      if (! $this->paymentMethod->getShouldBeProcessed()) {
+      if (! $this->paymentMethod->shouldProceed()) {
          return;
       }
+      $preparedData = $this->paymentMethod->statusOrderData($this->order);
       try {
-         $req = Http::withHeaders($additionalParams->getHeaders());
-         if ($this->paymentMethod->getStatusRequestMethod() === 'POST') {
-            $response = $req->post($this->paymentMethod->getUrlForStatusRequest($this->order), $additionalParams->getParams());
+         $req = Http::withHeaders($preparedData->getHeaders());
+         $url = $this->paymentMethod->statusUrl($this->order);
+         if ($this->paymentMethod->statusMethod() === 'POST') {
+            $response = $req->post($url, $preparedData->getParams());
          } else {
-            $response = $req->get($this->paymentMethod->getUrlForStatusRequest($this->order), $additionalParams->getParams());
+            $response = $req->get($url, $preparedData->getParams());
          }
          if ($response->successful()) {
-            $statusParamName = $this->paymentMethod->getStatusParamNameFromStatusResponse();
-            $status = $this->paymentMethod->orderStatusToPaymentStatus($response->json()[$statusParamName]);
+            $status = $this->paymentMethod->getStatusFromStatusResponse((array)$response->json());
             $this->updateOrderPaymentStatus($status);
          }
       } catch (Exception $e) {
@@ -112,7 +102,7 @@ class PaymentService
       //     'data' => $status->getId(),
       //     'status' => $status->getName(),
       // ]);
-      $this->order->payment_status = $status->getId();
+      $this->order->payment_status = $status->getName();
       $this->order->save();
    }
 
@@ -121,30 +111,23 @@ class PaymentService
       return thank_slug($order->uuid);
    }
 
-   private function getWebhookUrl(): string
-   {
-      return '';
-
-      return route('payment-webhook', ['number' => $this->order->number]);
-   }
-
    private function loadPaymentMethods(): void
    {
       $paymentMethods = [];
-      $directory = app_path('Payment/PaymentMethods');
+      $directory = module_path('Order', 'Services/Payment');
       $files = File::files($directory);
       foreach ($files as $file) {
-         $className = 'App\\Payment\\PaymentMethods\\' . pathinfo($file, PATHINFO_FILENAME);
+         $className = 'Modules\\Order\\Services\\Payment\\' . pathinfo($file, PATHINFO_FILENAME);
          if (class_exists($className)) {
             $reflection = new ReflectionClass($className);
-            if ($reflection->isSubclassOf(PaymentMethod::class) && ! $reflection->isAbstract()) {
+            if ($reflection->implementsInterface(PaymentMethodInterface::class) && !$reflection->isAbstract()) {
                $paymentMethods[] = $reflection->newInstance();
             }
          } else {
             require_once $file->getPathname();
             if (class_exists($className)) {
                $reflection = new ReflectionClass($className);
-               if ($reflection->isSubclassOf(PaymentMethod::class) && ! $reflection->isAbstract()) {
+               if ($reflection->implementsInterface(PaymentMethodInterface::class) && !$reflection->isAbstract()) {
                   $paymentMethods[] = $reflection->newInstance();
                }
             }
@@ -156,7 +139,7 @@ class PaymentService
    private function setCurrentPaymentMethods(array $paymentMethods): void
    {
       foreach ($paymentMethods as $paymentMethod) {
-         if ($paymentMethod->getId() === $this->order->details['payment']) {
+         if ($paymentMethod->getId() === $this->order->payment_method_id) {
             $this->paymentMethod = $paymentMethod;
             break;
          }
